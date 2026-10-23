@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Linsay 電路 10/21 分析</title>
+<meta name="description" content="Linsay 變容二極體電路 10/21 量測的費根鮑姆常數分析：分岔點、δ、跳變與共存吸引子、電路模擬、文獻比較。">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+        onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'\\(',right:'\\)',display:false}]});"></script>
+<style>
+:root {
+  --bg: #fcfcfb; --surface: #ffffff; --ink: #0b0b0b; --ink2: #52514e; --muted: #8a8984;
+  --line: #e4e3df; --accent: #2a78d6; --accent2: #eb6834; --good: #1baf7a; --chip: #eef4fc;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #1a1a19; --surface: #232322; --ink: #f0efec; --ink2: #c3c2b7; --muted: #8f8e88;
+    --line: #3a3a37; --accent: #3987e5; --accent2: #d95926; --good: #199e70; --chip: #1f2b3a;
+  }
+  :root:not([data-theme="light"]) figure img { background: #fff; }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink);
+  font: 16px/1.75 "Noto Sans TC", "Microsoft JhengHei", "PingFang TC", system-ui, sans-serif; }
+main { max-width: 980px; margin: 0 auto; padding: 32px 16px 80px; }
+header h1 { font-size: 2rem; line-height: 1.3; margin: 0 0 6px; }
+header p.sub { color: var(--ink2); margin: 0 0 24px; }
+nav { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 18px; margin: 0 0 32px; }
+nav ol { margin: 0; padding-left: 1.3em; columns: 2; column-gap: 32px; }
+nav a { color: var(--accent); text-decoration: none; }
+@media (max-width: 640px) { nav ol { columns: 1; } }
+h2 { font-size: 1.45rem; margin: 48px 0 12px; padding-top: 8px; border-top: 1px solid var(--line); }
+h3 { font-size: 1.15rem; margin: 28px 0 8px; }
+p, li { color: var(--ink); }
+.muted { color: var(--ink2); }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin: 16px 0 8px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
+.card .v { font-size: 1.45rem; white-space: nowrap; font-weight: 700; line-height: 1.2; font-variant-numeric: tabular-nums; }
+.card .l { color: var(--ink2); font-size: .9rem; margin-top: 4px; }
+.card.theory .v { color: var(--good); }
+.callout { background: var(--chip); border-radius: 10px; padding: 14px 18px; margin: 16px 0; }
+figure { margin: 20px 0; }
+figure img { width: 100%; max-width: 860px; height: auto; border: 1px solid var(--line); border-radius: 8px; display: block; }
+figcaption { color: var(--ink2); font-size: .92rem; margin-top: 6px; }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 720px) { .two { grid-template-columns: 1fr; } }
+.tablewrap { overflow-x: auto; margin: 14px 0; }
+table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; font-size: .95rem; }
+th, td { border-bottom: 1px solid var(--line); padding: 7px 10px; text-align: center; white-space: nowrap; }
+th { color: var(--ink2); font-weight: 600; }
+td.l, th.l { text-align: left; white-space: normal; }
+tr.hl td { font-weight: 700; }
+.katex-display { overflow-x: auto; overflow-y: hidden; padding: 4px 0; }
+footer { margin-top: 56px; color: var(--muted); font-size: .9rem; border-top: 1px solid var(--line); padding-top: 16px; }
+code { background: var(--chip); padding: 1px 5px; border-radius: 4px; font-size: .9em; }
+</style>
+</head>
+<body>
+<main>
+<header>
+  <h1>Linsay 電路：10/21 量測的費根鮑姆常數分析</h1>
+  <p class="sub">中央大學物理系 實驗物理 Group 05 · 整理日期 2026-10-23 · 驅動的變容二極體（MV2109）串聯共振電路</p>
+</header>
+
+<div class="cards">
+  <div class="card"><div class="v">2.33 ± 0.08</div><div class="l">實測 δ₁（2.2 MHz，四組平均）</div></div>
+  <div class="card"><div class="v">2.50</div><div class="l">無雜訊電路模擬的 δ₁（2.2 MHz）</div></div>
+  <div class="card"><div class="v">4.4–4.7</div><div class="l">模擬的 δ₂（第二個比值）</div></div>
+  <div class="card"><div class="v">3.0–4.2</div><div class="l">排除 A₁、以 λ 轉正處當 A∞ 的修正估計</div></div>
+  <div class="card theory"><div class="v">4.669</div><div class="l">理論值 δ（n → ∞）</div></div>
+</div>
+
+<div class="callout">
+  <strong>結論：</strong>實測的 δ 只有理論值的一半左右，但這不是量測或判斷方法的錯。
+  無雜訊的電路模擬給出和實測幾乎相同的第一個比值 δ₁，第二個比值 δ₂ 才接近 4.669；文獻中 Rollins &amp; Hunt 的精確模型也是 2.40。
+  另外，程式判定的混沌起點其實是帶狀混沌的合併點，讓用 A<sub>c</sub> 算的 δ 偏低。
+  電路的頻閃映射是二維、強耗散的映射（有效維度約 1.2），所以會出現跳變與共存吸引子。
+</div>
+
+<nav>
+  <ol>
+    <li><a href="#setup">實驗設定</a></li>
+    <li><a href="#method">分岔點的求法</a></li>
+    <li><a href="#bif">分岔圖</a></li>
+    <li><a href="#delta">δ 的結果</a></li>
+    <li><a href="#check">可靠性檢查</a></li>
+    <li><a href="#freq">頻率的影響</a></li>
+    <li><a href="#jump">跳變與偏壓</a></li>
+    <li><a href="#dim">映射是幾維？</a></li>
+    <li><a href="#sim">電路模擬與共存吸引子</a></li>
+    <li><a href="#why">δ 為什麼偏低</a></li>
+    <li><a href="#lit">文獻比較</a></li>
+    <li><a href="#inductor">串聯電感的模擬預測</a></li>
+    <li><a href="#next">下一步與限制</a></li>
+  </ol>
+</nav>
+
+<section id="setup">
+<h2>1. 實驗設定</h2>
+<p>產生器（AFG-2112，High-Z 設定）以固定頻率 f 的正弦波驅動「50 Ω 內阻 → 91.67 µH 電感 → MV2109 → 10 Ω」串聯電路，示波器 CH2 量 10 Ω 上的電壓 \(V_n = 10\,\Omega \times I\)。
+程式把驅動振幅 \(V_{pp}\) 一步一步調大，每個振幅記錄 400 個以上的驅動週期，並在基頻波峰的相位每週期取一個值（頻閃取樣）：週期 p 的軌道在分岔圖上是 p 個點，混沌則是一整條帶。</p>
+<p>和 10/14 相比：拿掉 56 Ω 改用 10 Ω 感測、探棒從 10x 改成 1x；最後幾組把電路放進鐵盒、筆電改用電池供電。</p>
+<figure><img src="figs/circuit.png" alt="10/21 的 Linsay 電路示意圖"><figcaption>圖 1　10/21 使用的電路。二極體方向未驗證；串聯迴路中翻轉二極體只改變電流正負號，不影響分岔點。</figcaption></figure>
+</section>
+
+<section id="method">
+<h2>2. 分岔點的求法</h2>
+<p>不直接用程式「週期標籤切換」的位置，而是用次諧波的成長：倍週期分岔剛發生時，新出現的次諧波振幅隨 \(\sqrt{A-A_n}\) 成長，所以它的平方對驅動振幅是線性的：</p>
+$$a_{f/2^n}^{2} \propto (A - A_n)$$
+<p>取次諧波出現後的前 4 點做線性外插到 0。以 2.2 MHz 的 181245 為例：A₁ = 2.002 ± 0.001 V、A₂ = 3.554 ± 0.002 V、A₃ = 4.217 ± 0.023 V。</p>
+<figure><img src="figs/figB_subharmonic_fit.png" alt="次諧波振幅平方外插求 A1、A2、A3"><figcaption>圖 2　A₁（f/2）、A₂（f/4）、A₃（f/8）附近的次諧波振幅平方與線性擬合。</figcaption></figure>
+</section>
+
+<section id="bif">
+<h2>3. 分岔圖</h2>
+<p>2.2 MHz、每個振幅 4 張、步距 0.025 V 的分岔圖：P1 → P2 → P4 → P8 → 混沌，混沌區內有很寬的週期 3 窗口，再倍週期成週期 6，之後回到混沌，順序和 logistic map 相同。</p>
+<figure><img src="figs/figA_bifurcation_2p2MHz.png" alt="2.2 MHz 分岔圖"><figcaption>圖 3　181245（2.2 MHz）的分岔圖；虛線為 A₁、A₂、A₃ 與程式判定的混沌起點 A<sub>c</sub>。</figcaption></figure>
+</section>
+
+<section id="delta">
+<h2>4. δ 的結果</h2>
+$$\delta_n = \frac{A_{n+1}-A_n}{A_{n+2}-A_{n+1}}, \qquad \delta \approx 1 + \frac{A_3 - A_2}{A_\infty - A_3}$$
+<p>第二式假設 \(A_\infty - A_n \propto \delta^{-n}\)，用混沌起點代替 A∞。</p>
+<div class="tablewrap"><table>
+<tr><th>頻率</th><th>資料</th><th>A₁ (V)</th><th>A₂ (V)</th><th>A₃ (V)</th><th>A<sub>c</sub> (V)</th><th>δ₁</th></tr>
+<tr><td>1.9 MHz</td><td>153239</td><td>1.912</td><td>4.236</td><td>4.985</td><td>5.444</td><td>3.10 ± 0.23</td></tr>
+<tr><td>2.0 MHz</td><td>5 次重複</td><td>1.908</td><td>3.951</td><td>4.726</td><td>5.130</td><td>2.64 ± 0.08</td></tr>
+<tr class="hl"><td>2.2 MHz</td><td>四組平均</td><td>2.010</td><td>3.584</td><td>4.261</td><td>4.666</td><td>2.33 ± 0.08</td></tr>
+<tr><td colspan="6" class="l">理論值</td><td>4.669</td></tr>
+</table></div>
+<p>所有資料都約是理論值的一半，而且彼此一致：這是系統性偏離，不是隨機誤差。δ₁ 隨頻率升高而變小。</p>
+<figure><img src="figs/figC_delta_comparison.png" alt="各組資料的 δ"><figcaption>圖 4　各組資料的 δ₁ 與用 A<sub>c</sub> 估計的 δ。</figcaption></figure>
+</section>
+
+<section id="check">
+<h2>5. 可靠性檢查：不是量測或判斷方法的問題</h2>
+<ul>
+  <li><strong>重複性：</strong>2.0 MHz 五次重複，δ₁ = 2.64 ± 0.08。</li>
+  <li><strong>遲滯：</strong>2.0 MHz 往上、往下掃（0.02 V 步距），分岔點差異在 1–2 個步距內。</li>
+  <li><strong>探棒：</strong>10x 與 1x 的分岔點相同；1x 讓頻譜底噪低約 7 dB。鐵盒加電池在底噪上看不出差別。</li>
+  <li><strong>判斷方法：</strong>用四種方法重算（程式的判斷、只用時域、只用頻譜、只用分支分裂量），A₁、A₂ 只差 0.01–0.06 V，δ₁ 都在 2.0–3.4。以 181245 為例，要得到 δ = 4.669，A₃ 必須在 3.89 V，但和週期判斷無關的 f/8 譜線在 4.1 V 以下都還是零。</li>
+</ul>
+<div class="two">
+  <figure><img src="figs/figJ_method_check.png" alt="四種方法的 δ1"><figcaption>圖 5　四種判斷／外插方法得到的 δ₁。</figcaption></figure>
+  <figure><img src="figs/figF_noise_floor.png" alt="不同探棒與降噪的底噪"><figcaption>圖 6　10x、1x、1x 加鐵盒的頻譜底噪。</figcaption></figure>
+</div>
+<p class="muted">注意：只看時域的週期判斷一定比真正的分岔點晚，而且越高階晚越多；直接讀分岔圖上顏色切換的位置會讓 A₃ 偏大、δ₁ 偏小。程式的閾值是用次諧波外插，已修正這個延遲。</p>
+</section>
+
+<section id="freq">
+<h2>6. 頻率的影響</h2>
+<p>1.8 MHz 以上都是乾淨的 P1 → P2 → P4 → P8 → 混沌，再接週期 3、6 窗口。A₁ 幾乎不隨頻率變，A₂、A₃ 與混沌起點隨頻率升高而降低，所以 δ₁ 隨頻率變小。1.8 MHz 以下會先出現週期 4 的「泡泡」再退回週期 2，路徑不同；1.9 MHz 也還有一個小泡泡（2.49–2.89 V）。</p>
+<figure><img src="figs/figE_period_map.png" alt="頻率-振幅週期地圖"><figcaption>圖 7　1.5–2.5 MHz 的週期地圖（0.08 V 步距）與 A₁、A₂、A₃。</figcaption></figure>
+</section>
+
+<section id="jump">
+<h2>7. 跳變與偏壓</h2>
+<p>2.2 MHz 的每一組資料都在約 2.8 V 突然跳到另一個週期 2 軌道：上分支幾乎加倍、下分支不變、CH2 峰對峰值增加約 55%。週期 3 窗口內約 7.0 V 也有同樣的跳變。這不是倍週期，而是在兩個共存軌道之間切換，一維單峰映射做不到。這也代表 A₁ 分岔出來的週期 2，並不是在 A₂ 分岔成週期 4 的那一個。</p>
+<figure><img src="figs/figK_jumps.png" alt="週期2與週期3的跳變"><figcaption>圖 8　跳變前後各分支的位置：左為週期 2（181245），右為週期 3（163533）。</figcaption></figure>
+<p>偏壓從 +0.3 V 改成 −0.1 V 後，整個分岔序列（含週期 3、6 窗口）大約是原本的 1/1.84 倍縮小版，形狀不變。</p>
+<figure><img src="figs/figD2_bias_rescaled.png" alt="偏壓的影響"><figcaption>圖 9　185118（−0.1 V）兩軸各放大約 1.84、1.87 倍後疊在 181245（+0.3 V）上。</figcaption></figure>
+</section>
+
+<section id="dim">
+<h2>8. 映射是幾維？</h2>
+<p>用最近鄰法從前 m 個取樣值預測下一個，計算正規化誤差：</p>
+$$E_m = \frac{\mathrm{RMS}\left(\hat{x}_{n+1} - x_{n+1}\right)}{\sigma_x}$$
+<p>如果是一維映射，E₁ 應該就降到雜訊水準。181245 的混沌區得到 E₁ = 0.72、E₂ = 0.14、E₃ = 0.08（週期態只有雜訊時約 0.02–0.07）：只用一個取樣值決定不了下一步。
+改用 Rollins &amp; Hunt 建議的變數「每週期最大電流」也只從 0.65 降到 0.56，仍需要兩個變數。</p>
+<figure><img src="figs/figL4_prediction_test.png" alt="一步預測誤差"><figcaption>圖 10　181245 混沌區的一步預測誤差（m = 1, 2, 3）與模擬的對照水準。</figcaption></figure>
+</section>
+
+<section id="sim">
+<h2>9. 電路模擬與共存吸引子</h2>
+<p>用 MV2109 的 SPICE 電荷模型（TT = 537 ns，10/14 實測）寫成 ODE，狀態只有電流 I 與接面電壓 V：</p>
+$$L\frac{dI}{dt} = \frac{V_{pp}}{2}\sin\omega t - RI - V,\qquad \left[C_j(V) + TT\cdot I_d'(V)\right]\frac{dV}{dt} = I - I_d(V)$$
+<p>所以每週期取一次 (I, V) 的頻閃映射是二維的。混沌區的 Lyapunov 指數 λ₁ ≈ +0.30、λ₂ ≈ −1.24（每驅動週期），</p>
+$$D_{KY} = 1 + \frac{\lambda_1}{|\lambda_2|} \approx 1.2$$
+<p>相空間每週期只縮小到約 0.37 倍：強耗散，但不是一維。模擬重現了分岔順序、週期 3/6 窗口、2.8 V 類型的跳變，以及 1.9 MHz 的泡泡；分岔點的絕對值約為實測的 0.67 倍（二極體參數用規格書值）。
+比較往上與往下掃，2.2 MHz 有兩段共存區：1.40–1.96 V 兩個不同的週期 2（各吸引 54%、46% 的初始條件），4.50–4.68 V 混沌與週期 3（65%、35%）。</p>
+<div class="two">
+  <figure><img src="figs/figL2_lyapunov_dimension.png" alt="模擬的 Lyapunov 指數與維度"><figcaption>圖 11　模擬的兩個 Lyapunov 指數與 Kaplan–Yorke 維度。</figcaption></figure>
+  <figure><img src="figs/figL7_coexisting_attractors.png" alt="共存吸引子與吸引域"><figcaption>圖 12　吸引域（左）與共存吸引子（右）：上為 1.70 V 兩個週期 2，下為 4.60 V 混沌與週期 3。</figcaption></figure>
+</div>
+<figure><img src="figs/figL1_sim_vs_data_bifurcation.png" alt="模擬與實測分岔圖"><figcaption>圖 13　模擬（上）與實測 181245（下）的分岔圖。</figcaption></figure>
+</section>
+
+<section id="why">
+<h2>10. δ 為什麼偏低</h2>
+<ol>
+  <li><strong>維度本身不會讓 δ 變小。</strong>二維 Hénon map 的前幾個比值都在 4.2–5.8，很快收斂到 4.669。</li>
+  <li><strong>第一個比值不在普適區。</strong>無雜訊模擬的 δ₁ 與實測幾乎相同（2.2 MHz：2.50 對 2.33–2.50；1.9 MHz：3.06 對 3.10），而 δ₂ = 4.4–4.7。</li>
+  <li><strong>程式的 A<sub>c</sub> 是帶狀混沌合併點。</strong>181245 在程式標為「週期 8」的 4.42–4.55 V，Lyapunov 指數已轉正。改用 λ 轉正處當 A∞ 並排除 A₁，δ ≈ 3.0–4.2（171120 為 3.0–3.6）；雜訊會讓 A∞ 估得偏晚，所以這是下限。</li>
+  <li><strong>要量到接近 4.669，需要 A₄、A₅。</strong>依模擬比例，2.2 MHz 的 A₄ 約 4.36 V、A∞ 約 4.40 V。</li>
+</ol>
+<figure><img src="figs/figL5_delta_convergence.png" alt="δn 的收斂"><figcaption>圖 14　模擬（不同頻率、TT）、對照映射與實測的 δₙ。</figcaption></figure>
+</section>
+
+<section id="lit">
+<h2>11. 文獻比較</h2>
+<div class="tablewrap"><table>
+<tr><th class="l"></th><th>Linsay (1981)</th><th>Testa 等 (1982)</th><th>Rollins &amp; Hunt (1982)</th><th>本實驗</th></tr>
+<tr><td class="l">電路</td><td>100 µH、180 Ω、1N5470A</td><td>10 mH、28 Ω、1N953</td><td>模型：理想二極體＋反向恢復 τ<sub>r</sub></td><td>91.67 µH、約 63 Ω、MV2109</td></tr>
+<tr><td class="l">驅動頻率</td><td>在共振（1.78 MHz）</td><td>略高於共振（約 97 kHz）</td><td>0.9 倍共振</td><td>高於共振 10–15%</td></tr>
+<tr><td class="l">反向恢復時間 × 頻率</td><td>未報告</td><td>應該很小</td><td>≤ 0.4</td><td>約 1.2</td></tr>
+<tr class="hl"><td class="l">第一個比值 δ₁</td><td>4.4 ± 0.1</td><td>4.26 ± 0.1</td><td>2.40</td><td>2.33–2.50</td></tr>
+<tr><td class="l">之後的比值</td><td>4.5 ± 0.6</td><td>4.28 ± 0.1</td><td>3.85 → 4.66</td><td>（量不到 A₄）</td></tr>
+</table></div>
+<p>Rollins &amp; Hunt 用真實參數算出的第一個比值就是 2.40，和本實驗幾乎相同。他們的模型可以化成一維映射，前提是反向恢復時間不超過週期的 0.4 倍；本實驗約 1.2 倍，二極體會「記得」前一個週期，這也是跳變與共存的可能來源。三篇文獻都沒有報告同週期軌道之間的跳變。</p>
+<p class="muted">文獻：P. S. Linsay, PRL 47, 1349 (1981)；J. Testa, J. Pérez, C. Jeffries, PRL 48, 714 (1982)；R. W. Rollins, E. R. Hunt, PRL 49, 1295 (1982)。數值為閱讀整理，引用前請對照原文。</p>
+</section>
+
+<section id="inductor">
+<h2>12. 串聯電感的模擬預測（LTspice）</h2>
+<p>把 4–5 顆 100 µH（實測 91.67 µH）電感串聯，驅動頻率降到新的共振頻率，讓驅動週期比反向恢復時間長（TT·f ≈ 0.5）。</p>
+<div class="tablewrap"><table>
+<tr><th>條件</th><th>L</th><th>f</th><th>TT·f</th><th>δ₁</th><th>δ₂</th><th>共存／跳變</th></tr>
+<tr><td>現在</td><td>91.7 µH</td><td>2.20 MHz</td><td>1.18</td><td>2.50</td><td>4.5–5.0</td><td>有</td></tr>
+<tr><td>4 顆，在共振</td><td>367 µH</td><td>0.976 MHz</td><td>0.52</td><td>3.0</td><td>約 7（誤差大）</td><td>有，另有週期 4 泡泡</td></tr>
+<tr><td>5 顆，在共振</td><td>458 µH</td><td>0.873 MHz</td><td>0.47</td><td>3.4</td><td>約 5.5（誤差大）</td><td>有</td></tr>
+</table></div>
+<p>δ₁ 會隨 TT·f 變小而上升，但共存狀態不會消失。換電感比較適合當作「檢驗 TT·f 影響」的實驗，而不是讓 δ 變好的方法。</p>
+</section>
+
+<section id="next">
+<h2>13. 下一步與限制</h2>
+<h3>下一步</h3>
+<ol>
+  <li>在 2.8 V 與 7.0 V 附近往上、往下掃，直接在實驗中證明共存軌道。</li>
+  <li>在 2.2 MHz 的 4.20–4.60 V 用 0.005 V 步距、每點 8 張，找 A₄。</li>
+  <li>量電路輸入端的實際驅動電壓，取代產生器的設定值。</li>
+  <li>串聯 4–5 顆電感，驅動在新的共振頻率，檢驗 TT·f 的影響。</li>
+  <li>用 Lyapunov 指數而不是時域週期標籤判斷混沌起點。</li>
+</ol>
+<p>其中往下掃、細掃視窗、頻率清單、偏壓掃描、存完整波形等，需要先修改量測程式，已整理成需求清單交給程式端。</p>
+<h3>限制與待確認</h3>
+<ul>
+  <li>模擬的二極體參數來自規格書，分岔點絕對值與實測約差 0.67 倍；反向恢復用單一 TT 描述，模擬的維度可能偏低。</li>
+  <li>10x 與 1x 探棒量到的 V<sub>n</sub> 絕對值差約 1.8 倍，原因不確定；分岔點（驅動振幅）不受影響。</li>
+  <li>偏壓值以使用者紀錄為準（181245 為 +0.3 V、185118 為 −0.1 V），與檔頭紀錄不一致。</li>
+  <li>修正後的 δ（3.0–4.2）依賴 Lyapunov 指數的鄰居距離設定，偏保守。</li>
+</ul>
+</section>
+
+<footer>
+  資料：2026-10-21 Linsay 電路量測（GW Instek GDS-1072B 示波器、AFG-2112 產生器，自製 Python 量測程式）。分析與模擬：Python（numpy、scipy、matplotlib）與 LTspice。
+</footer>
+</main>
+</body>
+</html>
